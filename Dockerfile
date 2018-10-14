@@ -1,10 +1,13 @@
-FROM continuumio/miniconda3
+FROM alpine:edge
 
+RUN apk update && apk add --no-cache \
+    python3 \
+    py3-psycopg2 \
+    bash && \
+    python3 -m ensurepip
 ADD ./app/requirements.txt /tmp/requirements.txt
-ADD ./app/conda-requirements.txt /tmp/conda-requirements.txt
 
-RUN pip install -qr /tmp/requirements.txt 
-RUN conda install --yes --file /tmp/conda-requirements.txt
+RUN pip3 install -qr /tmp/requirements.txt 
 
 ADD ./app /opt/app/
 WORKDIR /opt/app
