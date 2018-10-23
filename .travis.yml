@@ -3,5 +3,15 @@ services:
   - docker
 
 script:
-  - docker build -t logger .
-  - docker run -it -p 5000:5000 -e PORT=5000 -e SECRET_KEY="sup" -e DATABASE_URL="sqlite:///test.db" logger:latest /bin/bash -c "py.test"
+  - docker build -t $IMAGE .
+  - docker run -it -p 5000:5000 -e PORT=5000 -e SECRET_KEY="sup" -e DATABASE_URL="sqlite:///test.db" $IMAGE /bin/bash -c "py.test"
+
+after_sucess:
+  - if [[ "$TRAVIS_BRANCH" == "master" ]]; then
+      docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD quay;
+      docker push $IMAGE
+    fi
+
+env:
+  global:
+    - IMAGE=quay.io/thedataincubator/logger:$TRAVIS_COMMIT
