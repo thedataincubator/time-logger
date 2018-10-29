@@ -2,28 +2,28 @@
 import os
 import time
 import pytest
+from models import Event
 from sqlalchemy import create_engine 
 from sqlalchemy.orm import sessionmaker
 from app import create_app
 
 SECRET = 'Isecret'
+DB_NAME = 'test.db'
 
 @pytest.fixture
 def client():
-    db_name = "test.db"
-    db_url = "sqlite:///" + db_name
+    db_url = "sqlite:///" + DB_NAME
     app = create_app(SECRET, db_url)
     app.testing = True
     yield app.test_client()
-    os.unlink(db_name)
+    os.unlink(DB_NAME)
 
 @pytest.fixture
 def sess():
-    db_name = "test.db"
-    db_url = "sqlite:///" + db_name
-    dngine = create_engine(db_ur)
+    db_url = "sqlite:///" + DB_NAME
+    engine = create_engine(db_url)
     sess = sessionmaker(bind=engine)
-    yield sess
+    yield sess()
 
 def _test_status(code, resp):
     assert resp.status_code == code
@@ -48,9 +48,9 @@ def test_good_auth(client):
                                                         'name':"haha"}))
 def test_count(client):
     data = {'SECRET_KEY':SECRET,'name':"haha"}
-    for i in range(10):
+    for i in range(3):
         client.put('/add_event', data=data)
-    assert client.post('/query_name', data=data).json == 10
+    assert client.post('/query_name', data=data).json == 1
     time.sleep(1)
     data['window'] = 1e-7
     assert client.post('/query_name', data=data).json == 0
@@ -64,5 +64,16 @@ def test_multiple_keys(client):
     for name in names:
         data['name'] = name
         assert client.post('/query_name', data=data).json == 1
+
+def test_unique(client, sess):
+    """test failure"""
+    data = {'SECRET_KEY':SECRET,'name':"haha"}
+    events = [Event(name=data['name'], time=Event.gen_dt(i % 3)) 
+              for i in range(6)]
+    sess.add_all(events)
+    sess.commit()
+    assert client.post('/query_name', data=data).json == 3
+
+
 
 

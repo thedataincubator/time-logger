@@ -6,7 +6,9 @@ db = SQLAlchemy()
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
-    time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    time = db.Column(db.DateTime, 
+                     nullable=False, 
+                     default=datetime.utcnow)
 
     @classmethod
     def gen_dt(cls, window):
