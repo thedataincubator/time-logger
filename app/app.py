@@ -3,6 +3,9 @@ from functools import wraps
 from flask import Flask, render_template, request, redirect, jsonify
 from models import Event, db
 
+def _unique_days(events):
+  return len(set(i.time.strftime("%Y-%m-%d") for i in events))
+
 def create_app(secret_key, database_uri):
 
   app = Flask(__name__)
@@ -41,10 +44,11 @@ def create_app(secret_key, database_uri):
     name = request.form['name']
     window = float(request.form.get('window', 3)) # in days
     dt = Event.gen_dt(window)
-    return jsonify(Event.query
-                        .filter_by(name=name)
-                        .filter(Event.time > dt)
-                        .count())
+    # could do in SQLAlchemy, but for now in python
+    counts = _unique_days(Event.query
+                    .filter_by(name=name)
+                    .filter(Event.time > dt).all())
+    return jsonify(counts)
 
   return app
 
